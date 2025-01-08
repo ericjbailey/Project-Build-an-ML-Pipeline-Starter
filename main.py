@@ -51,38 +51,77 @@ def go(config: DictConfig):
             )
 
         if "basic_cleaning" in active_steps:
-            ##################
-            # Implement here #
-            ##################
-            pass
+            # Run the basic_cleaning step
+            _ = mlflow.run(
+                f"{config['main']['components_repository']}/basic_cleaning",
+                "main",
+                version='main',
+                env_manager="conda",
+                parameters={
+                    "input_artifact": config["basic_cleaning"]["input_artifact"],
+                    "output_artifact": config["basic_cleaning"]["output_artifact"],
+                    "output_type": config["basic_cleaning"]["output_type"],
+                    "output_description": config["basic_cleaning"]["output_description"],
+                    "min_price": config["basic_cleaning"]["min_price"],
+                    "max_price": config["basic_cleaning"]["max_price"],
+                },
+            )
 
         if "data_check" in active_steps:
-            ##################
-            # Implement here #
-            ##################
-            pass
+            # Run the data_check step
+            _ = mlflow.run(
+                f"{config['main']['components_repository']}/data_check",
+                "main",
+                version='main',
+                env_manager="conda",
+                parameters={
+                    "input_artifact": config["data_check"]["input_artifact"],
+                    "ref_data": config["data_check"]["ref_data"],
+                    "kl_threshold": config["data_check"]["kl_threshold"],
+                    "min_rows": config["data_check"]["min_rows"],
+                    "max_rows": config["data_check"]["max_rows"],
+                    "min_price": config["data_check"]["min_price"],
+                    "max_price": config["data_check"]["max_price"],
+                },
+            )
 
         if "data_split" in active_steps:
-            ##################
-            # Implement here #
-            ##################
-            pass
+            mlflow.run(
+                f"{config['main']['components_repository']}/train_val_test_split",
+                "main",
+                version='main',
+                env_manager="conda",
+                parameters={
+                    "input": config["split"]["input_artifact"],  # Reference from config.yml
+                    "test_size": config["split"]["test_size"],
+                    "random_seed": config["split"]["random_seed"],
+                    "stratify_by": config["split"]["stratify_by"],
+                },
+            )
+
 
         if "train_random_forest" in active_steps:
-
             # NOTE: we need to serialize the random forest configuration into JSON
-            rf_config = os.path.abspath("rf_config.json")
-            with open(rf_config, "w+") as fp:
-                json.dump(dict(config["modeling"]["random_forest"].items()), fp)  # DO NOT TOUCH
+            rf_config_path = os.path.abspath("rf_config.json")
+            with open(rf_config_path, "w+") as fp:
+                json.dump(dict(config["modeling"]["random_forest"].items()), fp)
 
-            # NOTE: use the rf_config we just created as the rf_config parameter for the train_random_forest
-            # step
-
-            ##################
-            # Implement here #
-            ##################
-
-            pass
+            # Run the train_random_forest step with mlflow
+            mlflow.run(
+                f"{config['main']['components_repository']}/train_random_forest",
+                "main",
+                version="main",
+                env_manager="conda",
+                parameters={
+                    "trainval_artifact": "trainval_data.csv:latest",
+                    "val_size": config["modeling"]["val_size"],
+                    "random_seed": config["modeling"]["random_seed"],
+                    "stratify_by": config["modeling"]["stratify_by"],
+                    "rf_config": rf_config_path,  # Pass the serialized rf_config file
+                    "max_tfidf_features": config["modeling"]["max_tfidf_features"],
+                    "output_artifact": "random_forest_export",
+                },
+            )
 
         if "test_regression_model" in active_steps:
 
