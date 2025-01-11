@@ -7,9 +7,11 @@ import logging
 import os
 import shutil
 import matplotlib.pyplot as plt
-
 import mlflow
 import json
+import itertools
+import subprocess
+import sys
 
 import pandas as pd
 import numpy as np
@@ -23,7 +25,7 @@ import wandb
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.pipeline import Pipeline, make_pipeline
-
+from omegaconf import OmegaConf
 
 def delta_date_feature(dates):
     """
@@ -37,8 +39,36 @@ def delta_date_feature(dates):
 logging.basicConfig(level=logging.INFO, format="%(asctime)-15s %(message)s")
 logger = logging.getLogger()
 
-
 def go(args):
+    if args.hydra_options:
+        # Parse Hydra options (e.g., "modeling.random_forest.max_depth=10,50 modeling.random_forest.n_estimators=100,200")
+        options = {}
+        for opt in args.hydra_options.split():
+            key, values = opt.split("=")
+            options[key] = values.split(",")
+
+        # Generate all combinations of options
+        combinations = list(itertools.product(*options.values()))
+        keys = list(options.keys())
+
+    if os.getenv("RECURSIVE_RUN") == "1":
+        print("Recursive call detected, exiting.")
+        return
+
+    for i, combo in enumerate(combinations):
+        hydra_options = " ".join(
+            f"{keys[j]}={combo[j]}" for j in range(len(combo))
+        )
+        print(f"[{i + 1}/{len(combinations)}] Running with options: {hydra_options}")
+
+        # Set RECURSIVE_RUN only for the subprocess
+        subprocess_env = os.environ.copy()
+        subprocess_env["RECURSIVE_RUN"] = "1"
+
+        subprocess.run(
+            [sys.executable, sys.argv[0], *sys.argv[1:], f"--hydra_options={hydra_options}"],
+            env=subprocess_env
+        )
 
     run = wandb.init(job_type="train_random_forest")
     run.config.update(args)
@@ -60,8 +90,10 @@ def go(args):
 
     logger.info(f"Minimum price: {y.min()}, Maximum price: {y.max()}")
 
+    stratify_col = None if args.stratify_by.lower() == "none" else X[args.stratify_by]
+
     X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=args.val_size, stratify=X[args.stratify_by], random_state=args.random_seed
+        X, y, test_size=args.val_size, stratify=stratify_col, random_state=args.random_seed
     )
 
     logger.info("Preparing sklearn pipeline")
@@ -92,6 +124,8 @@ def go(args):
     # Save model package in the MLFlow sklearn format
     if os.path.exists("random_forest_dir"):
         shutil.rmtree("random_forest_dir")
+
+    X_val = X_val.select_dtypes(include=['int64', 'float64', 'string'])
 
     signature = mlflow.models.infer_signature(X_val, y_pred)
     mlflow.sklearn.save_model(
@@ -255,6 +289,13 @@ if __name__ == "__main__":
         type=str,
         help="Name for the output serialized model",
         required=True,
+    )
+
+    parser.add_argument(
+        "--hydra_options", 
+        type=str, 
+        help="Hydra options for parameter sweeps",
+        required=False
     )
 
     args = parser.parse_args()

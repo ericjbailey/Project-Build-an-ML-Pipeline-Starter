@@ -1,14 +1,21 @@
 main:
-  components_repository: "https://github.com/ericjbailey/Project-Build-an-ML-Pipeline-Starter.git#components"
+  components_repository: "https://github.com/ericjbailey/Project-Build-an-ML-Pipeline-Starter.git"
   # All the intermediate files will be copied to this directory at the end of the run.
   # Set this to null if you are running in prod
-  project_name: nyc_airbnb
+  project_name: nyc_airbnb2
   experiment_name: development
   steps: all
 etl:
   sample: "sample1.csv"
   min_price: 10  # dollars
   max_price: 350  # dollars
+basic_cleaning:
+  input_artifact: "raw_data.csv:latest"
+  output_artifact: "clean_data.csv"
+  output_type: "clean_data"
+  output_description: "Data with outliers removed"
+  min_price: 10
+  max_price: 350
 data_check:
   kl_threshold: 0.2
 modeling:
@@ -26,8 +33,8 @@ modeling:
   # NOTE: you can put here any parameter that is accepted by the constructor of
   # RandomForestRegressor. This is a subsample, but more could be added:
   random_forest:
-    n_estimators: 100
-    max_depth: 15
+    n_estimators: [100, 200]  # Changed to a list
+    max_depth: [10, 50]       # Changed to a list
     min_samples_split: 4
     min_samples_leaf: 3
     # Here -1 means all available cores
