@@ -14,12 +14,11 @@ logger = logging.getLogger()
 # DO NOT MODIFY
 def go(args):
 
-    run = wandb.init(job_type="basic_cleaning")
     run.config.update(args)
 
     # Download input artifact. This will also log that this script is using this
     
-    run = wandb.init(project="nyc_airbnb2", group="cleaning", save_code=True)
+    run = wandb.init(project="nyc_airbnb2", group="basic_cleaning", save_code=True)
     artifact_local_path = run.use_artifact(args.input_artifact).file()
     df = pd.read_csv(artifact_local_path)
     # Drop outliers

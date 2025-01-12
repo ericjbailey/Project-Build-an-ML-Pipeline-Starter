@@ -1,5 +1,5 @@
 main:
-  components_repository: "https://github.com/ericjbailey/Project-Build-an-ML-Pipeline-Starter.git"
+  components_repository: "C:\Users\15126\Project-Build-an-ML-Pipeline-Starter\Project-Build-an-ML-Pipeline-Starter"
   # All the intermediate files will be copied to this directory at the end of the run.
   # Set this to null if you are running in prod
   project_name: nyc_airbnb2
@@ -37,7 +37,6 @@ modeling:
     max_depth: [10, 50]       # Changed to a list
     min_samples_split: 4
     min_samples_leaf: 3
-    # Here -1 means all available cores
     n_jobs: -1
     criterion: squared_error
     max_features: 0.5
