@@ -7,7 +7,7 @@ main:
   experiment_name: development
   steps: all
 download:
-  sample: "sample.csv"
+  sample: "sample1.csv"
   min_price: 10  # dollars
   max_price: 350  # dollars
 basic_cleaning:
