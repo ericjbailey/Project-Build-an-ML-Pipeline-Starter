@@ -1,3 +1,6 @@
+name: data_check
+conda_env: conda.yml
+
 entry_points:
   main:
     parameters:
