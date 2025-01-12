@@ -18,9 +18,11 @@ basic_cleaning:
   min_price: 10
   max_price: 350
 data_check:
-  csv: "clean_data.csv"           
-  ref: "ref_data.csv"             
+  input_artifact: "clean_data.csv:latest"           
+  ref_data: "ref_data.csv"             
   kl_threshold: 0.2              
+  min_rows: 15000
+  max_rows: 1000000
   min_price: 10                 
   max_price: 350                 
 modeling:
