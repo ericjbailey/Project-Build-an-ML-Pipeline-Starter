@@ -77,7 +77,7 @@ def go(config: DictConfig):
                 env_manager="conda",
                 parameters={
                     "input_artifact": config["data_check"]["input_artifact"],
-                    "ref_data": config["data_check"]["ref_data"],
+                    "output_artifact": config["data_check"]["output_artifact"],
                     "kl_threshold": config["data_check"]["kl_threshold"],
                     "min_rows": config["data_check"]["min_rows"],
                     "max_rows": config["data_check"]["max_rows"],
