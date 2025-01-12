@@ -2,7 +2,7 @@ main:
   components_repository: "https://github.com/ericjbailey/Project-Build-an-ML-Pipeline-Starter.git"
   # All the intermediate files will be copied to this directory at the end of the run.
   # Set this to null if you are running in prod
-  project_name: nyc_airbnb2
+  project_name: nyc_airbnb3
   experiment_name: development
   steps: all
 etl:

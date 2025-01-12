@@ -70,7 +70,6 @@ def go(config: DictConfig):
             )
 
         if "data_check" in active_steps:
-            # Run the data_check step
             _ = mlflow.run(
                 f"{config['main']['components_repository']}#src/data_check",
                 "main",

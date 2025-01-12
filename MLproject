@@ -1,4 +1,4 @@
-name: nyc_airbnb2
+name: nyc_airbnb3
 conda_env: conda.yml
 
 entry_points:
