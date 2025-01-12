@@ -31,7 +31,7 @@ entry_points:
 
 
     command: >
-        python run.py
+      /usr/bin/env python run.py
           --input_artifact {input_artifact}
           --output_artifact {output_artifact}
           --output_type {output_type}

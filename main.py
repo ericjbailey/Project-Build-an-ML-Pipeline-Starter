@@ -52,8 +52,8 @@ def go(config: DictConfig):
                 },
             )
 
-        if "basic_cleaning" in active_steps:
-            # Run the basic_cleaning step
+        if "basic_cleaning" in active_steps:         
+            print("Running basic_cleaning step...")
             _ = mlflow.run(
                 f"{config['main']['components_repository']}#src/basic_cleaning",
                 "main",
@@ -64,8 +64,8 @@ def go(config: DictConfig):
                     "output_artifact": config["basic_cleaning"]["output_artifact"],
                     "output_type": config["basic_cleaning"]["output_type"],
                     "output_description": config["basic_cleaning"]["output_description"],
-                    "min_price": config["basic_cleaning"]["min_price"],
-                    "max_price": config["basic_cleaning"]["max_price"],
+                    "min_price": float(config["basic_cleaning"]["min_price"]),
+                    "max_price": float(config["basic_cleaning"]["max_price"]),
                 },
             )
 
