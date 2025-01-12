@@ -39,13 +39,13 @@ def go(config: DictConfig):
 
         if "download" in active_steps:
             # Download file and load in W&B
-            _ = mlflow.run(
-                f"{config['main']['components_repository']}#components/get_data",
+            mlflow.run(
+                f"{config['main']['components_repository']}/get_data",
                 "main",
                 version='main',
                 env_manager="conda",
                 parameters={
-                    "sample": config["etl"]["sample"],
+                    "sample": config["download"]["sample"],
                     "artifact_name": "sample.csv",
                     "artifact_type": "raw_data",
                     "artifact_description": "Raw file as downloaded"
@@ -54,8 +54,8 @@ def go(config: DictConfig):
 
         if "basic_cleaning" in active_steps:         
             print("Running basic_cleaning step...")
-            _ = mlflow.run(
-                f"{config['main']['components_repository']}#src/basic_cleaning",
+            mlflow.run(
+                f"{config['main']['src_repository']}/basic_cleaning",
                 "main",
                 version='main',
                 env_manager="conda",
@@ -70,8 +70,8 @@ def go(config: DictConfig):
             )
 
         if "data_check" in active_steps:
-            _ = mlflow.run(
-                f"{config['main']['components_repository']}#src/data_check",
+            mlflow.run(
+                f"{config['main']['src_repository']}/data_check",
                 "main",
                 version='main',
                 env_manager="conda",
@@ -111,7 +111,7 @@ def go(config: DictConfig):
 
             # Run the train_random_forest step with mlflow
             mlflow.run(
-                os.path.join(config['main']['components_repository'], "train_random_forest"),
+                f"{config['main']['components_repository']}#components/train_random_forest",
                 "main",
                 parameters={
                     "trainval_artifact": "trainval_data.csv:latest",

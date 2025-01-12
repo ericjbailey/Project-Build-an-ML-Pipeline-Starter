@@ -1,11 +1,12 @@
 main:
-  components_repository: "https://github.com/ericjbailey/Project-Build-an-ML-Pipeline-Starter.git"
+  components_repository: "https://github.com/ericjbailey/Project-Build-an-ML-Pipeline-Starter.git@main#components"
+  src_repository: "https://github.com/ericjbailey/Project-Build-an-ML-Pipeline-Starter.git@main#src"
   # All the intermediate files will be copied to this directory at the end of the run.
   # Set this to null if you are running in prod
   project_name: nyc_airbnb3
   experiment_name: development
   steps: all
-etl:
+download:
   sample: "sample.csv"
   min_price: 10  # dollars
   max_price: 350  # dollars
