@@ -6,11 +6,11 @@ main:
   experiment_name: development
   steps: all
 etl:
-  sample: "sample1.csv"
+  sample: "sample.csv"
   min_price: 10  # dollars
   max_price: 350  # dollars
 basic_cleaning:
-  input_artifact: "sample1.csv:latest"
+  input_artifact: "sample.csv:latest"
   output_artifact: "clean_data.csv"
   output_type: "clean_data"
   output_description: "Data with outliers removed"
