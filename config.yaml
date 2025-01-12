@@ -18,7 +18,11 @@ basic_cleaning:
   min_price: 10
   max_price: 350
 data_check:
-  kl_threshold: 0.2
+  csv: "clean_data.csv"           
+  ref: "ref_data.csv"             
+  kl_threshold: 0.2              
+  min_price: 10                 
+  max_price: 350                 
 modeling:
   # Fraction of data to use for test (the remaining will be used for train and validation)
   test_size: 0.2
