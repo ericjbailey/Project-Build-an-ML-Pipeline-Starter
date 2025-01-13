@@ -32,4 +32,7 @@ entry_points:
         description: Maximum accepted price
         type: float
 
-    command: "pytest . -vv --input_artifact {input_artifact} --output_artifact {output_artifact} --kl_threshold {kl_threshold} --min_rows {min_rows} --max_rows {max_rows} --min_price {min_price} --max_price {max_price}"
+    command: >
+      pytest . -vv --input_artifact {input_artifact} --output_artifact {output_artifact}
+             --kl_threshold {kl_threshold} --min_rows {min_rows} --max_rows {max_rows}
+             --min_price {min_price} --max_price {max_price}
