@@ -1,12 +1,12 @@
 name: basic_cleaning
-conda_env: conda.yml
+conda_env: conda.yml 
 
 entry_points:
   main:
     parameters:
 
       input_artifact:
-        description: Ininital artifact to be cleaned
+        description: Initial artifact to be cleaned
         type: string
 
       output_artifact:
@@ -24,10 +24,11 @@ entry_points:
       min_price:
         description: Minimum house price to be considered
         type: float
+        default: 10.0
 
       max_price:
         description: Maximum house price to be considered
         type: float
-
+        default: 350.0 
 
     command: "python run.py --input_artifact {input_artifact} --output_artifact {output_artifact} --output_type {output_type} --output_description {output_description} --min_price {min_price} --max_price {max_price}"

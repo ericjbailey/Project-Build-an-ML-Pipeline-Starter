@@ -78,11 +78,11 @@ def go(config: DictConfig):
                 parameters={
                     "input_artifact": config["data_check"]["input_artifact"],
                     "output_artifact": config["data_check"]["output_artifact"],
-                    "kl_threshold": config["data_check"]["kl_threshold"],
+                    "kl_threshold": str(config["data_check"]["kl_threshold"]),
                     "min_rows": config["data_check"]["min_rows"],
                     "max_rows": config["data_check"]["max_rows"],
-                    "min_price": config["data_check"]["min_price"],
-                    "max_price": config["data_check"]["max_price"],
+                    "min_price": str(config["data_check"]["min_price"]),
+                    "max_price": str(config["data_check"]["max_price"]),
                 },
             )
 

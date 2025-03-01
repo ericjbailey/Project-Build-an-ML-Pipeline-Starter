@@ -15,24 +15,34 @@ entry_points:
       kl_threshold:
         description: Threshold for the KL divergence test on the neighborhood group column
         type: float
+        default: 0.2
 
       min_rows:
         description: Minimum number of rows for validation
         type: int
+        default: 15000
 
       max_rows:
         description: Maximum number of rows for validation
         type: int
+        default: 1000000
 
       min_price:
         description: Minimum accepted price
         type: float
+        default: 10.0
 
       max_price:
         description: Maximum accepted price
         type: float
+        default: 350.0
 
     command: >
-      pytest . -vv --input_artifact {input_artifact} --output_artifact {output_artifact}
-             --kl_threshold {kl_threshold} --min_rows {min_rows} --max_rows {max_rows}
-             --min_price {min_price} --max_price {max_price}
+      pytest . -vv 
+      --input_artifact "{input_artifact}" 
+      --output_artifact "{output_artifact}" 
+      --kl_threshold "{kl_threshold}" 
+      --min_rows "{min_rows}" 
+      --max_rows "{max_rows}" 
+      --min_price "{min_price}" 
+      --max_price "{max_price}"
