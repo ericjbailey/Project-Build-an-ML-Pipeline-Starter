@@ -24,7 +24,12 @@ data_check:
   min_price: 10                 
   max_price: 350   
   min_rows: 15000
-  max_rows: 1000000            
+  max_rows: 1000000
+data_split:
+  input: "clean_sample.csv:latest"
+  test_size: 0.2
+  random_seed: 42
+  stratify_by: "neighbourhood_group"
 modeling:
   # Fraction of data to use for test (the remaining will be used for train and validation)
   test_size: 0.2
