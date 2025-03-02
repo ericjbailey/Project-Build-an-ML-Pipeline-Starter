@@ -11,4 +11,3 @@ dependencies:
   - pip:
       - mlflow==2.18.0
       - wandb==0.16.0
-      - git+https://github.com/udacity/Project-Build-an-ML-Pipeline-Starter.git#egg=wandb-utils&subdirectory=components
