@@ -93,7 +93,7 @@ def go(config: DictConfig):
                 version='main',
                 env_manager="conda",
                 parameters={
-                    "input": config["split"]["input_artifact"],  # Reference from config.yml
+                    "input_artifact": config["split"]["input_artifact"],  # Reference from config.yml
                     "test_size": config["split"]["test_size"],
                     "random_seed": config["split"]["random_seed"],
                     "stratify_by": config["split"]["stratify_by"],
