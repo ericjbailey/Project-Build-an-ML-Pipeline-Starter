@@ -33,10 +33,10 @@ split:
 modeling:
   mlflow_model: "random_forest_export:prod"
   test_dataset: "test_data.csv:latest"
-  val_size: 0.2  # ✅ Added
-  random_seed: 42  # ✅ Added
-  stratify_by: "neighbourhood_group"  # ✅ Added
-  max_tfidf_features: 5  # ✅ Added
+  val_size: 0.2
+  random_seed: 42
+  stratify_by: "neighbourhood_group"
+  max_tfidf_features: 5
   random_forest:
     n_estimators: [100, 200]
     max_depth: [10, 50]

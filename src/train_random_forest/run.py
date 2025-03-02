@@ -40,8 +40,10 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)-15s %(message)s")
 logger = logging.getLogger()
 
 def go(args):
+    combinations = []
+
     if args.hydra_options:
-        # Parse Hydra options (e.g., "modeling.random_forest.max_depth=10,50 modeling.random_forest.n_estimators=100,200")
+        # Parse Hydra options
         options = {}
         for opt in args.hydra_options.split():
             key, values = opt.split("=")
@@ -51,24 +53,23 @@ def go(args):
         combinations = list(itertools.product(*options.values()))
         keys = list(options.keys())
 
+        for i, combo in enumerate(combinations):
+            hydra_options = " ".join(
+                f"{keys[j]}={combo[j]}" for j in range(len(combo))
+            )
+            print(f"[{i + 1}/{len(combinations)}] Running with options: {hydra_options}")
+
+            subprocess_env = os.environ.copy()
+            subprocess_env["RECURSIVE_RUN"] = "1"
+
+            subprocess.run(
+                [sys.executable, sys.argv[0], *sys.argv[1:], f"--hydra_options={hydra_options}"],
+                env=subprocess_env
+            )
+
     if os.getenv("RECURSIVE_RUN") == "1":
         print("Recursive call detected, exiting.")
         return
-
-    for i, combo in enumerate(combinations):
-        hydra_options = " ".join(
-            f"{keys[j]}={combo[j]}" for j in range(len(combo))
-        )
-        print(f"[{i + 1}/{len(combinations)}] Running with options: {hydra_options}")
-
-        # Set RECURSIVE_RUN only for the subprocess
-        subprocess_env = os.environ.copy()
-        subprocess_env["RECURSIVE_RUN"] = "1"
-
-        subprocess.run(
-            [sys.executable, sys.argv[0], *sys.argv[1:], f"--hydra_options={hydra_options}"],
-            env=subprocess_env
-        )
 
     run = wandb.init(job_type="train_random_forest")
     run.config.update(args)
