@@ -102,17 +102,32 @@ def go(config: DictConfig):
 
 
         if "train_random_forest" in active_steps:
-            # NOTE: we need to serialize the random forest configuration into JSON
+            # Extract the random forest config
+            rf_config = OmegaConf.to_container(config["modeling"]["random_forest"], resolve=True)
+
+            # Build hydra_options string from any list-type hyperparameters
+            hydra_options = []
+            for param, value in rf_config.items():
+                if isinstance(value, list):
+                    hydra_options.append(f"modeling.random_forest.{param}=" + ",".join(map(str, value)))
+            hydra_options_str = " ".join(hydra_options)
+
+            # Remove list-type params from rf_config before saving to JSON
+            single_value_rf_config = {k: v for k, v in rf_config.items() if not isinstance(v, list)}
+
+            # Serialize cleaned rf_config to JSON
             rf_config_path = os.path.abspath("rf_config.json")
             with open(rf_config_path, "w+") as fp:
-                rf_config = OmegaConf.to_container(config["modeling"]["random_forest"], resolve=True)
-                json.dump(rf_config, fp)
+                json.dump(single_value_rf_config, fp)
 
+            print(f"Running train_random_forest step with hydra_options: {hydra_options_str}")
 
             # Run the train_random_forest step with mlflow
             mlflow.run(
                 f"{config['main']['src_repository']}/train_random_forest",
                 "main",
+                version="main",
+                env_manager="conda",
                 parameters={
                     "trainval_artifact": "trainval_data.csv:latest",
                     "val_size": config["modeling"]["val_size"],
@@ -121,6 +136,7 @@ def go(config: DictConfig):
                     "rf_config": rf_config_path,
                     "max_tfidf_features": config["modeling"]["max_tfidf_features"],
                     "output_artifact": "random_forest_export",
+                    "hydra_options": hydra_options_str,  # ✅ Pass sweep options here
                 },
             )
 
