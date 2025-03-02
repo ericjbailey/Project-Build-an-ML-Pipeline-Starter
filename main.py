@@ -139,7 +139,7 @@ def go(config: DictConfig):
 
         if "test_regression_model" in active_steps:
             mlflow.run(
-                f"{config['main']['src_repository']}/test_regression_model",
+                f"{config['main']['components_repository']}/test_regression_model",
                 "main",
                 version="main",
                 env_manager="conda",
