@@ -15,10 +15,7 @@ _steps = [
     "data_check",
     "data_split",
     "train_random_forest",
-    # NOTE: We do not include this in the steps so it is not run by mistake.
-    # You first need to promote a model export to "prod" before you can run this,
-    # then you need to run this step explicitly
-#    "test_regression_model"
+    "test_regression_model"
 ]
 
 
@@ -141,34 +138,16 @@ def go(config: DictConfig):
             )
 
         if "test_regression_model" in active_steps:
-            run = wandb.init(job_type="test_model")
-
-            logger.info("Downloading artifacts")
-
-            # Download input artifact (model)
-            model_local_path = run.use_artifact(config["test_regression_model"]["mlflow_model"]).download()
-
-            # Download test dataset
-            test_dataset_path = run.use_artifact(config["test_regression_model"]["test_dataset"]).file()
-
-            # Read test dataset
-            X_test = pd.read_csv(test_dataset_path)
-            y_test = X_test.pop("price")
-
-            logger.info("Loading model and performing inference on test set")
-            sk_pipe = mlflow.sklearn.load_model(model_local_path)
-            y_pred = sk_pipe.predict(X_test)
-
-            logger.info("Scoring")
-            r_squared = sk_pipe.score(X_test, y_test)
-            mae = mean_absolute_error(y_test, y_pred)
-
-            logger.info(f"Score: {r_squared}")
-            logger.info(f"MAE: {mae}")
-
-            # Log MAE and r2
-            run.summary['r2'] = r_squared
-            run.summary['mae'] = mae
+            mlflow.run(
+                f"{config['main']['src_repository']}/test_regression_model",
+                "main",
+                version="main",
+                env_manager="conda",
+                parameters={
+                    "mlflow_model": config["modeling"]["mlflow_model"],
+                    "test_dataset": config["modeling"]["test_dataset"],
+                },
+            )
 
 
 if __name__ == "__main__":
