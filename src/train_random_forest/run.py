@@ -24,70 +24,59 @@ from sklearn.preprocessing import OrdinalEncoder, FunctionTransformer
 import wandb
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
-from sklearn.pipeline import Pipeline, make_pipeline
-from omegaconf import OmegaConf
+from sklearn.pipeline import Pipeline
+
 
 def delta_date_feature(dates):
-    """
-    Given a 2d array containing dates (in any format recognized by pd.to_datetime), it returns the delta in days
-    between each date and the most recent date in its column
-    """
     date_sanitized = pd.DataFrame(dates).apply(pd.to_datetime)
-    return date_sanitized.apply(lambda d: (d.max() -d).dt.days, axis=0).to_numpy()
+    return date_sanitized.apply(lambda d: (d.max() - d).dt.days, axis=0).to_numpy()
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)-15s %(message)s")
 logger = logging.getLogger()
 
+
 def go(args):
-    combinations = []
+    if os.getenv("RECURSIVE_RUN") != "1":
+        # Only perform the sweep in the root run
+        if args.hydra_options:
+            options = {}
+            for opt in args.hydra_options.split():
+                key, values = opt.split("=")
+                options[key] = values.split(",")
 
-    if args.hydra_options:
-        # Parse Hydra options
-        options = {}
-        for opt in args.hydra_options.split():
-            key, values = opt.split("=")
-            options[key] = values.split(",")
+            combinations = list(itertools.product(*options.values()))
+            keys = list(options.keys())
 
-        # Generate all combinations of options
-        combinations = list(itertools.product(*options.values()))
-        keys = list(options.keys())
+            for i, combo in enumerate(combinations):
+                hydra_options = " ".join(
+                    f"{keys[j]}={combo[j]}" for j in range(len(combo))
+                )
+                print(f"[{i + 1}/{len(combinations)}] Running with options: {hydra_options}")
 
-        for i, combo in enumerate(combinations):
-            hydra_options = " ".join(
-                f"{keys[j]}={combo[j]}" for j in range(len(combo))
-            )
-            print(f"[{i + 1}/{len(combinations)}] Running with options: {hydra_options}")
+                subprocess_env = os.environ.copy()
+                subprocess_env["RECURSIVE_RUN"] = "1"
 
-            subprocess_env = os.environ.copy()
-            subprocess_env["RECURSIVE_RUN"] = "1"
+                subprocess.run(
+                    [sys.executable, sys.argv[0], *sys.argv[1:], f"--hydra_options={hydra_options}"],
+                    env=subprocess_env
+                )
 
-            subprocess.run(
-                [sys.executable, sys.argv[0], *sys.argv[1:], f"--hydra_options={hydra_options}"],
-                env=subprocess_env
-            )
-
-    if os.getenv("RECURSIVE_RUN") == "1":
-        print("Recursive call detected, exiting.")
-        return
+            print("Sweep completed. Exiting.")
+            return  # ✅ Exit after completing the sweep
 
     run = wandb.init(job_type="train_random_forest")
     run.config.update(args)
 
-    # Get the Random Forest configuration and update W&B
     with open(args.rf_config) as fp:
         rf_config = json.load(fp)
     run.config.update(rf_config)
 
-    # Fix the random seed for the Random Forest, so we get reproducible results
     rf_config['random_state'] = args.random_seed
 
-    # Use run.use_artifact(...).file() to get the train and validation artifact
-    # and save the returned path in train_local_pat
     trainval_local_path = run.use_artifact(args.trainval_artifact).file()
-   
     X = pd.read_csv(trainval_local_path)
-    y = X.pop("price")  # this removes the column "price" from X and puts it into y
+    y = X.pop("price")
 
     logger.info(f"Minimum price: {y.min()}, Maximum price: {y.max()}")
 
@@ -98,22 +87,12 @@ def go(args):
     )
 
     logger.info("Preparing sklearn pipeline")
-
     sk_pipe, processed_features = get_inference_pipeline(rf_config, args.max_tfidf_features)
 
     logger.info("Fitting")
-    sk_pipe.fit(X_train, y_train)  # Fit pipeline
+    sk_pipe.fit(X_train, y_train)
 
-    # Compute metrics
-    logger.info("Scoring")
     r_squared = sk_pipe.score(X_val, y_val)
-    y_pred = sk_pipe.predict(X_val)
-    mae = mean_absolute_error(y_val, y_pred)
-
-    # Compute r2 and MAE
-    logger.info("Scoring")
-    r_squared = sk_pipe.score(X_val, y_val)
-
     y_pred = sk_pipe.predict(X_val)
     mae = mean_absolute_error(y_val, y_pred)
 
@@ -122,7 +101,6 @@ def go(args):
 
     logger.info("Exporting model")
 
-    # Save model package in the MLFlow sklearn format
     if os.path.exists("random_forest_dir"):
         shutil.rmtree("random_forest_dir")
 
@@ -136,43 +114,30 @@ def go(args):
         input_example=X_train.iloc[:5],
     )
 
-    # Upload the model we just exported to W&B
     artifact = wandb.Artifact(
         args.output_artifact,
-        type = 'model_export',
-        description = 'Trained ranfom forest artifact',
-        metadata = rf_config
+        type='model_export',
+        description='Trained random forest artifact',
+        metadata=rf_config
     )
     artifact.add_dir('random_forest_dir')
     run.log_artifact(artifact)
 
-    # Plot feature importance
     fig_feat_imp = plot_feature_importance(sk_pipe, processed_features)
 
     run.summary['r2'] = r_squared
     run.summary["mae"] = mae
     run.log({"feature_importance": wandb.Image(fig_feat_imp)})
 
-    # Upload to W&B the feture importance visualization
-    run.log(
-        {
-          "feature_importance": wandb.Image(fig_feat_imp),
-        }
-    )
-
 
 def plot_feature_importance(pipe, feat_names):
-    # We collect the feature importance for all non-nlp features first
     feat_imp = pipe["random_forest"].feature_importances_[: len(feat_names)-1]
-    # For the NLP feature we sum across all the TF-IDF dimensions into a global
-    # NLP importance
     nlp_importance = sum(pipe["random_forest"].feature_importances_[len(feat_names) - 1:])
     feat_imp = np.append(feat_imp, nlp_importance)
     fig_feat_imp, sub_feat_imp = plt.subplots(figsize=(10, 10))
-    # idx = np.argsort(feat_imp)[::-1]
     sub_feat_imp.bar(range(feat_imp.shape[0]), feat_imp, color="r", align="center")
-    _ = sub_feat_imp.set_xticks(range(feat_imp.shape[0]))
-    _ = sub_feat_imp.set_xticklabels(np.array(feat_names), rotation=90)
+    sub_feat_imp.set_xticks(range(feat_imp.shape[0]))
+    sub_feat_imp.set_xticklabels(np.array(feat_names), rotation=90)
     fig_feat_imp.tight_layout()
     return fig_feat_imp
 
@@ -186,7 +151,7 @@ def get_inference_pipeline(rf_config, max_tfidf_features):
     non_ordinal_categorical_preproc = Pipeline(
         steps=[
             ("impute", SimpleImputer(strategy="most_frequent")),
-            ("onehot", OrdinalEncoder()),  # OneHotEncoder can also be used
+            ("onehot", OrdinalEncoder()),
         ]
     )
 
@@ -240,65 +205,16 @@ def get_inference_pipeline(rf_config, max_tfidf_features):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train a Random Forest")
 
-    parser = argparse.ArgumentParser(description="Basic cleaning of dataset")
-
-    parser.add_argument(
-        "--trainval_artifact",
-        type=str,
-        help="Artifact containing the training dataset. It will be split into train and validation"
-    )
-
-    parser.add_argument(
-        "--val_size",
-        type=float,
-        help="Size of the validation split. Fraction of the dataset, or number of items",
-    )
-
-    parser.add_argument(
-        "--random_seed",
-        type=int,
-        help="Seed for random number generator",
-        default=42,
-        required=False,
-    )
-
-    parser.add_argument(
-        "--stratify_by",
-        type=str,
-        help="Column to use for stratification",
-        default="none",
-        required=False,
-    )
-
-    parser.add_argument(
-        "--rf_config",
-        help="Random forest configuration. A JSON dict that will be passed to the "
-        "scikit-learn constructor for RandomForestRegressor.",
-        default="{}",
-    )
-
-    parser.add_argument(
-        "--max_tfidf_features",
-        help="Maximum number of words to consider for the TFIDF",
-        default=10,
-        type=int
-    )
-
-    parser.add_argument(
-        "--output_artifact",
-        type=str,
-        help="Name for the output serialized model",
-        required=True,
-    )
-
-    parser.add_argument(
-        "--hydra_options", 
-        type=str, 
-        help="Hydra options for parameter sweeps",
-        required=False
-    )
+    parser.add_argument("--trainval_artifact", type=str, required=True)
+    parser.add_argument("--val_size", type=float, required=True)
+    parser.add_argument("--random_seed", type=int, default=42)
+    parser.add_argument("--stratify_by", type=str, default="none")
+    parser.add_argument("--rf_config", type=str, default="{}")
+    parser.add_argument("--max_tfidf_features", type=int, default=10)
+    parser.add_argument("--output_artifact", type=str, required=True)
+    parser.add_argument("--hydra_options", type=str, required=False)
 
     args = parser.parse_args()
-
     go(args)
