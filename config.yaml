@@ -33,14 +33,12 @@ split:
 modeling:
   mlflow_model: "random_forest_export:prod"
   test_dataset: "test_data.csv:latest"
-random_forest:
-  n_estimators: [100, 200]  # Changed to a list
-  max_depth: [10, 50]       # Changed to a list
-  min_samples_split: 4
-  min_samples_leaf: 3
-    # Here -1 means all available cores
-  n_jobs: -1
-  criterion: squared_error
-  max_features: 0.5
-  # DO not change the following
-  oob_score: true
+  random_forest:
+    n_estimators: [100, 200]  # Changed to a list
+    max_depth: [10, 50]       # Changed to a list
+    min_samples_split: 4
+    min_samples_leaf: 3
+    n_jobs: -1
+    criterion: squared_error
+    max_features: 0.5
+    oob_score: true

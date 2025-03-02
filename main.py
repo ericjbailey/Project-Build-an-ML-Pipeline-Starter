@@ -111,7 +111,7 @@ def go(config: DictConfig):
 
             # Run the train_random_forest step with mlflow
             mlflow.run(
-                f"{config['main']['components_repository']}#components/train_random_forest",
+                f"{config['main']['src_repository']}/train_random_forest",
                 "main",
                 parameters={
                     "trainval_artifact": "trainval_data.csv:latest",
