@@ -26,7 +26,7 @@ data_check:
   min_rows: 15000
   max_rows: 1000000
 split:
-  input: "clean_sample.csv:latest"
+  input_artifact: "clean_sample.csv:latest"
   test_size: 0.2
   random_seed: 42
   stratify_by: "neighbourhood_group"
